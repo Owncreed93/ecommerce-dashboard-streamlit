@@ -1,0 +1,26 @@
+# --- Python & Environment ---
+__pycache__/
+*.py[oc]
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# --- Build & Distribution ---
+build/
+dist/
+*.egg-info/
+
+# --- Testing & Reports ---
+.coverage
+htmlcov/
+ruff_test_report.txt
+
+# --- Data ---
+# We keep data.csv for deployment on Streamlit Cloud
+# (Ensure file size is within GitHub limits)
+data/
+
+# --- IDE & System ---
+.vscode/
+*.code-workspace
+.DS_Store
