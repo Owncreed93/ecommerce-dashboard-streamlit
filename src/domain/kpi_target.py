@@ -5,6 +5,7 @@ and evaluates metrics against established targets.
 """
 
 from dataclasses import dataclass
+from decimal import Decimal
 
 from domain.kpi_value import KpiValue
 
@@ -18,7 +19,7 @@ class KpiTarget:
         unit: The unit of measurement for the goal.
     """
 
-    goal: float
+    goal: Decimal
     unit: str
 
     def __post_init__(self) -> None:
@@ -27,17 +28,17 @@ class KpiTarget:
         Raises:
             ValueError: If the goal is not greater than zero.
         """
-        if self.goal <= 0:
+        if self.goal <= Decimal("0"):
             raise ValueError("Goal must be greater than zero.")
 
-    def get_performance_percentage(self, actual: KpiValue) -> float:
+    def get_performance_percentage(self, actual: KpiValue) -> Decimal:
         """Calculates the ratio between actual performance and the goal.
 
         Args:
             actual: The current KPI value to evaluate.
 
         Returns:
-            A float representing the performance percentage (e.g., 0.85).
+            A Decimal representing the performance percentage (e.g., 0.85).
 
         Raises:
             ValueError: If the unit of the actual value does not match the goal.
@@ -49,7 +50,7 @@ class KpiTarget:
                 f"with value in {actual.unit}"
             )
 
-        if self.goal == 0:
+        if self.goal == Decimal("0"):
             raise ZeroDivisionError("Cannot calculate performance against a zero goal.")
 
         return actual.value / self.goal

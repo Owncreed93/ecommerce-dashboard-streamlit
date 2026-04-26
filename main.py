@@ -9,6 +9,7 @@ import streamlit as st
 
 from application.kpi_service import KpiService
 from domain.transaction_type import TransactionType
+from infrastructure.hybrid_data_provider import HybridDataProvider
 from infrastructure.polars_repository import PolarsKpiRepository
 
 
@@ -19,7 +20,9 @@ def main() -> None:
     )
 
     # 1. Infrastructure and Service Initialization
-    repo = PolarsKpiRepository(file_path="data/data.csv")
+    # HybridDataProvider defaults to local data/data.csv if OCI_PAR_URL is missing
+    data_provider = HybridDataProvider(local_path="data/data.csv")
+    repo = PolarsKpiRepository(data_provider=data_provider)
     service = KpiService(repository=repo)
 
     # 2. Dynamic Filter Data Extraction

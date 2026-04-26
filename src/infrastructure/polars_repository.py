@@ -1,29 +1,52 @@
 """Implementation of the KpiRepository using Polars.
 
 This module provides the PolarsKpiRepository, which leverages the
-Lazy API to process large CSV datasets with minimal memory footprint.
+Lazy API to process large datasets with minimal memory footprint.
 """
 
 from datetime import datetime
 
 import polars as pl
 
+from domain.data_provider_interface import DataProvider
 from domain.repository_interface import KpiRepository
 
 
 class PolarsKpiRepository(KpiRepository):
     """Infrastructure implementation for KPI data access using Polars.
 
-    Uses scan_csv and LazyFrame operations to optimize data retrieval.
+    Uses scan_csv and LazyFrame operations to optimize data retrieval
+    from either local or remote data sources via a DataProvider.
     """
 
-    def __init__(self, file_path: str) -> None:
-        """Initializes the repository with the path to the CSV file.
+    def __init__(self, data_provider: DataProvider) -> None:
+        """Initializes the repository with a DataProvider.
 
         Args:
-            file_path: Absolute or relative path to data.csv.
+            data_provider: The source provider to retrieve data location.
         """
-        self.file_path = file_path
+        self.data_provider = data_provider
+
+    def _get_lazy_frame(self) -> pl.LazyFrame:
+        """Initializes a lazy scan of the data source with optimized types."""
+        source = self.data_provider.ensure_data_is_available()
+
+        # Define schema for memory efficiency
+        schema = {
+            "InvoiceNo": pl.String,
+            "StockCode": pl.String,
+            "Description": pl.String,
+            "Quantity": pl.Int32,
+            "UnitPrice": pl.Float64,
+            "CustomerID": pl.Int32,
+            "Country": pl.String,
+        }
+
+        return pl.scan_csv(
+            source,
+            encoding="utf8-lossy",
+            schema_overrides=schema,
+        )
 
     def get_lazy_data(
         self,
@@ -41,14 +64,9 @@ class PolarsKpiRepository(KpiRepository):
         Returns:
             A filtered LazyFrame.
         """
-        # Scan the CSV lazily with utf8-lossy encoding and explicit string types
-        lf = pl.scan_csv(
-            self.file_path,
-            encoding="utf8-lossy",
-            schema_overrides={"InvoiceNo": pl.String, "CustomerID": pl.String}
-        )
+        lf = self._get_lazy_frame()
 
-        # Parse InvoiceDate (e.g., 12/1/2010 8:26)
+        # Parse InvoiceDate
         lf = lf.with_columns(
             pl.col("InvoiceDate").str.to_datetime(format="%m/%d/%Y %H:%M")
         )
@@ -68,11 +86,7 @@ class PolarsKpiRepository(KpiRepository):
     def get_unique_countries(self) -> list[str]:
         """Retrieves a sorted list of unique countries in the dataset."""
         df = (
-            pl.scan_csv(
-                self.file_path,
-                encoding="utf8-lossy",
-                schema_overrides={"InvoiceNo": pl.String}
-            )
+            self._get_lazy_frame()
             .select("Country")
             .unique()
             .sort("Country")
@@ -82,11 +96,7 @@ class PolarsKpiRepository(KpiRepository):
 
     def get_date_range(self) -> tuple[datetime, datetime]:
         """Retrieves the minimum and maximum dates in the dataset."""
-        lf = pl.scan_csv(
-            self.file_path,
-            encoding="utf8-lossy",
-            schema_overrides={"InvoiceNo": pl.String}
-        ).select(
+        lf = self._get_lazy_frame().select(
             pl.col("InvoiceDate").str.to_datetime(format="%m/%d/%Y %H:%M")
         )
         stats = lf.select(

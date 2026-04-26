@@ -27,3 +27,6 @@ docs/coding_sessions/
 .vscode/
 *.code-workspace
 .DS_Store
+
+# Env
+.env

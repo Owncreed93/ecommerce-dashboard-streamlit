@@ -11,6 +11,7 @@ import psutil
 import pytest
 
 from application.kpi_service import KpiService
+from infrastructure.local_file_data_provider import LocalFileDataProvider
 from infrastructure.polars_repository import PolarsKpiRepository
 
 
@@ -33,7 +34,8 @@ def service() -> KpiService:
     is_stress = os.getenv("STRESS_TEST") == "1"
     file_path = "data/stress_test.csv" if is_stress else "data/data.csv"
 
-    repo = PolarsKpiRepository(file_path=file_path)
+    provider = LocalFileDataProvider(file_path=file_path)
+    repo = PolarsKpiRepository(data_provider=provider)
     return KpiService(repository=repo)
 
 
@@ -81,7 +83,9 @@ def test_efficiency_baseline(service: KpiService) -> None:
     # Baseline for 500k rows: 150MB | Stress test for 1M high-cardinality rows: 500MB
     # Latency goal is always sub-second (1000ms)
     mem_limit = 500 if is_stress else 150
-    
+
     assert latency_ms < 1000, f"Latency too high: {latency_ms}ms"
-    assert memory_delta_mb < mem_limit, f"Memory footprint too high: {memory_delta_mb}MB"
+    assert memory_delta_mb < mem_limit, (
+        f"Memory footprint too high: {memory_delta_mb}MB"
+    )
     assert revenue.amount != 0

@@ -5,6 +5,7 @@ formatting of business metrics.
 """
 
 from dataclasses import dataclass
+from decimal import Decimal
 
 
 @dataclass(frozen=True, slots=True)
@@ -18,7 +19,7 @@ class KpiValue:
         unit: The unit of measurement (e.g., 'USD', '%', 'units').
     """
 
-    value: float
+    value: Decimal
     unit: str
 
     def __post_init__(self) -> None:
@@ -39,12 +40,13 @@ class KpiValue:
         if self.unit == "%":
             return f"{self.value * 100:.2f}%"
 
-        if abs(self.value) >= 1_000_000:
-            scaled = self.value / 1_000_000
+        abs_value = abs(self.value)
+        if abs_value >= 1_000_000:
+            scaled = self.value / Decimal("1000000")
             return f"{scaled:.1f}M {self.unit}"
 
-        if abs(self.value) >= 1_000:
-            scaled = self.value / 1_000
+        if abs_value >= 1_000:
+            scaled = self.value / Decimal("1000")
             return f"{scaled:.1f}K {self.unit}"
 
         return f"{self.value:.2f} {self.unit}"

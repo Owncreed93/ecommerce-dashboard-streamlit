@@ -10,6 +10,7 @@ from pathlib import Path
 import polars as pl
 import pytest
 
+from infrastructure.local_file_data_provider import LocalFileDataProvider
 from infrastructure.polars_repository import PolarsKpiRepository
 
 
@@ -39,7 +40,8 @@ def sample_csv(tmp_path: Path) -> Path:
 
 def test_repository_loads_and_filters_by_country(sample_csv: Path) -> None:
     """Verify that the repository filters data by country correctly."""
-    repo = PolarsKpiRepository(file_path=str(sample_csv))
+    provider = LocalFileDataProvider(str(sample_csv))
+    repo = PolarsKpiRepository(data_provider=provider)
     lazy_df = repo.get_lazy_data(country="France")
 
     result = lazy_df.collect()
@@ -49,7 +51,8 @@ def test_repository_loads_and_filters_by_country(sample_csv: Path) -> None:
 
 def test_repository_filters_by_date_range(sample_csv: Path) -> None:
     """Verify that the repository filters data by date range correctly."""
-    repo = PolarsKpiRepository(file_path=str(sample_csv))
+    provider = LocalFileDataProvider(str(sample_csv))
+    repo = PolarsKpiRepository(data_provider=provider)
     start = datetime(2010, 12, 1, 0, 0)
     end = datetime(2010, 12, 1, 23, 59)
 
@@ -61,18 +64,18 @@ def test_repository_filters_by_date_range(sample_csv: Path) -> None:
 
 def test_repository_handles_null_customer_id(sample_csv: Path) -> None:
     """Verify that null CustomerIDs are handled (e.g., filled or cast)."""
-    repo = PolarsKpiRepository(file_path=str(sample_csv))
+    provider = LocalFileDataProvider(str(sample_csv))
+    repo = PolarsKpiRepository(data_provider=provider)
     lazy_df = repo.get_lazy_data()
     result = lazy_df.collect()
 
-    # Check that CustomerID is correctly cast (should be Float64 or Int64
-    # depending on implementation)
     assert result["CustomerID"].null_count() == 1
 
 
 def test_repository_gets_unique_countries(sample_csv: Path) -> None:
     """Verify that the repository retrieves all unique countries."""
-    repo = PolarsKpiRepository(file_path=str(sample_csv))
+    provider = LocalFileDataProvider(str(sample_csv))
+    repo = PolarsKpiRepository(data_provider=provider)
     countries = repo.get_unique_countries()
 
     assert "United Kingdom" in countries
@@ -82,7 +85,8 @@ def test_repository_gets_unique_countries(sample_csv: Path) -> None:
 
 def test_repository_gets_date_range(sample_csv: Path) -> None:
     """Verify that the repository retrieves correct min and max dates."""
-    repo = PolarsKpiRepository(file_path=str(sample_csv))
+    provider = LocalFileDataProvider(str(sample_csv))
+    repo = PolarsKpiRepository(data_provider=provider)
     min_date, max_date = repo.get_date_range()
 
     assert isinstance(min_date, datetime)

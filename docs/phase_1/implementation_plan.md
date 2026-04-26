@@ -2,7 +2,7 @@
 
 ## 1. Project Objective
 
-Develop a professional-grade KPI Dashboard for Streamlit Cloud deployment. This project implements Domain-Driven Design (DDD) to visualize business metrics from the `data/data.csv` dataset, using Polars for high-efficiency data processing.
+Develop a professional-grade KPI Dashboard for PythonAnywhere deployment. This project implements Domain-Driven Design (DDD) to visualize business metrics from the `data/data.csv` dataset, using Polars for high-efficiency data processing.
 
 ## 2. Defined Business KPIs & Statistical Metrics
 
@@ -25,7 +25,7 @@ The system will support dynamic filtering (by Country, Date, and Order Value) an
 
 - **Language:** Python 3.13.
 - **Data Engine:** Polars (Lazy API for efficient dynamic filtering).
-- **Frontend:** Streamlit (Sidebar filters acting as state flags).
+- **Frontend:** Web Interface (Decoupled from Domain).
 - **Logic:** Application Services (Orchestration) and Domain Entities (Business rules).
 - **Testing:** Pytest.
 - **Linter/Formatter:** Ruff.
@@ -39,6 +39,7 @@ The system will support dynamic filtering (by Country, Date, and Order Value) an
   - `Money`: High-precision financial calculations.
   - `KpiValue`: Wrapper for metrics and statistical figures.
   - `KpiDate`: Temporal validation.
+  - `KpiTarget`: Business goals and threshold logic.
 - **Validation:** Unit tests for precision and immutability.
 
 ### Phase 2: Data Infrastructure (Repository Pattern)
@@ -51,13 +52,13 @@ The system will support dynamic filtering (by Country, Date, and Order Value) an
 - **Scope:** Orchestrate calculations (Percentages, Segmentations, Aggregations).
 - **Validation:** Unit tests verifying that logic is independent of the data source.
 
-### Phase 4: Streamlit Interface
+### Phase 4: Web Interface
 
-- **Scope:** Interactive sidebar filters, metric cards, and Plotly statistical charts.
+- **Scope:** Interactive filters, metric cards, and Plotly statistical charts.
 
 ### Phase 5: Deployment and Final Audit
 
-- **Scope:** Optimization for Streamlit Cloud.
+- **Scope:** Optimization for PythonAnywhere via `wsgi.py`.
 
 ## 5. Engineering Standards
 
