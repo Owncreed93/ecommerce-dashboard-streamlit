@@ -20,6 +20,9 @@ ruff_test_report.txt
 # (Ensure file size is within GitHub limits)
 data/
 
+# Coding Sessions
+docs/coding_sessions/
+
 # --- IDE & System ---
 .vscode/
 *.code-workspace
