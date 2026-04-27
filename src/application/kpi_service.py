@@ -134,14 +134,14 @@ class KpiService:
         ).collect()
 
         if stats.height == 0 or stats["order_count"][0] == 0:
-            return KpiValue(value=0.0, unit="USD")
+            return KpiValue(value=Decimal("0.0"), unit="USD")
 
         rev = stats["revenue"][0]
         if trans_type == TransactionType.RETURNS:
             rev = abs(rev)
 
         aov = rev / stats["order_count"][0]
-        return KpiValue(value=round(aov, 2), unit="USD")
+        return KpiValue(value=Decimal(str(round(aov, 2))), unit="USD")
 
     def get_active_customers_count(
         self,

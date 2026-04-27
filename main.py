@@ -4,13 +4,22 @@ This module initializes the application layer and renders the
 interactive KPI dashboard using Streamlit and Plotly.
 """
 
+import sys
+from pathlib import Path
+
 import plotly.express as px
 import streamlit as st
 
-from application.kpi_service import KpiService
-from domain.transaction_type import TransactionType
-from infrastructure.hybrid_data_provider import HybridDataProvider
-from infrastructure.polars_repository import PolarsKpiRepository
+# Add 'src' to sys.path to allow imports from the internal layers.
+# This is required for deployment on Streamlit Cloud.
+src_path = str(Path(__file__).parent / "src")
+if src_path not in sys.path:
+    sys.path.insert(0, src_path)
+
+from application.kpi_service import KpiService  # noqa: E402
+from domain.transaction_type import TransactionType  # noqa: E402
+from infrastructure.hybrid_data_provider import HybridDataProvider  # noqa: E402
+from infrastructure.polars_repository import PolarsKpiRepository  # noqa: E402
 
 
 def main() -> None:
