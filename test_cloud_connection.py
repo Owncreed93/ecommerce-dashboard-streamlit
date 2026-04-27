@@ -18,17 +18,20 @@ if src_path not in sys.path:
 from infrastructure.hybrid_data_provider import HybridDataProvider  # noqa: E402
 
 
-def test_connection() -> None:
-    """Verifies the connection to the OCI Object Storage via DataProvider."""
-    # 1. Use a public test URL or the user's PAR if provided
-    # For testing logic without a real PAR, we can use a known public CSV
-    test_url = os.environ.get(
-        "OCI_PAR_URL",
-        "https://raw.githubusercontent.com/plotly/datasets/master/2014_usa_states.csv",
-    )
+def test_connection(force_fallback: bool = False) -> None:
+    """Verifies the connection or fallback logic."""
+    if force_fallback:
+        if "OCI_PAR_URL" in os.environ:
+            del os.environ["OCI_PAR_URL"]
+        test_url = None
+    else:
+        test_url = os.environ.get(
+            "OCI_PAR_URL",
+            "https://raw.githubusercontent.com/plotly/datasets/master/2014_usa_states.csv",
+        )
+        os.environ["OCI_PAR_URL"] = test_url
 
     print(f"Testing with URL: {test_url}")
-    os.environ["OCI_PAR_URL"] = test_url
 
     provider = HybridDataProvider(local_path="data/data.csv")
     resolved_path = provider.ensure_data_is_available()
@@ -46,4 +49,4 @@ def test_connection() -> None:
 
 
 if __name__ == "__main__":
-    test_connection()
+    test_connection(force_fallback=True)
