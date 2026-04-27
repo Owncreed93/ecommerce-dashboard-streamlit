@@ -22,6 +22,7 @@ data/
 
 # Coding Sessions
 docs/coding_sessions/
+docs/article.md
 
 # --- IDE & System ---
 .vscode/
