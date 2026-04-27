@@ -5,6 +5,7 @@ cloud-based OCI streaming and local file-based data access,
 supporting both environment variables and Streamlit secrets.
 """
 
+import logging
 import os
 from typing import Final
 
@@ -13,6 +14,9 @@ import streamlit as st
 from domain.data_provider_interface import DataProvider
 
 OCI_PAR_URL_KEY: Final[str] = "OCI_PAR_URL"
+
+# Initialize technical logger
+logger = logging.getLogger(__name__)
 
 
 class HybridDataProvider(DataProvider):
@@ -41,13 +45,17 @@ class HybridDataProvider(DataProvider):
         # 2. Try Streamlit Secrets safely (Streamlit Cloud)
         if not url:
             try:
-                # We check the secret value safely.
-                # Accessing st.secrets triggers parsing; catching error is necessary
-                # locally.
                 if hasattr(st, "secrets") and OCI_PAR_URL_KEY in st.secrets:
                     url = st.secrets.get(OCI_PAR_URL_KEY)
-            except Exception:
-                # Ignore errors when secrets.toml is missing in local development.
-                pass
+            except Exception as e:
+                logger.debug("Streamlit secrets not accessible: %s", str(e))
 
-        return str(url) if url else self.local_path
+        if url:
+            logger.info("Data source resolved to remote cloud URL.")
+            return str(url)
+
+        logger.warning(
+            "OCI_PAR_URL not found. Falling back to local path: %s",
+            self.local_path
+        )
+        return self.local_path
