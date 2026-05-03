@@ -238,11 +238,14 @@ class KpiService:
         )
         lf = self._apply_transaction_filter(lf, trans_type)
 
-        # Extract hour and count unique orders
+        # Ensure each InvoiceNo is counted only once (Integrity Fix)
+        # We sort by date to consistently pick the earliest occurrence per invoice
         result = (
-            lf.with_columns(pl.col("InvoiceDate").dt.hour().alias("hour"))
+            lf.sort("InvoiceDate")
+            .unique("InvoiceNo", keep="first")
+            .with_columns(pl.col("InvoiceDate").dt.hour().alias("hour"))
             .group_by("hour")
-            .agg(pl.col("InvoiceNo").n_unique().alias("count"))
+            .agg(pl.len().alias("count"))
             .sort("hour")
             .collect()
         )

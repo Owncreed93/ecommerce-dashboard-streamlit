@@ -94,6 +94,32 @@ def test_get_peak_hours(mock_repo: MagicMock) -> None:
     assert peaks[10] == 2
 
 
+def test_get_peak_hours_integrity(mock_repo: MagicMock) -> None:
+    """Verify that a single InvoiceNo is counted only once in the histogram.
+
+    Scenario: Invoice 'C1' has two lines with slightly different timestamps
+    that fall into different hours (e.g., 10:59 and 11:00). It should only
+    be counted once.
+    """
+    data = {
+        "InvoiceNo": ["C1", "C1"],
+        "InvoiceDate": [
+            datetime(2026, 4, 25, 10, 59),
+            datetime(2026, 4, 25, 11, 00),
+        ],
+        "Quantity": [-1, -1],
+        "UnitPrice": [10.0, 10.0],
+    }
+    mock_repo.get_lazy_data.return_value = pl.LazyFrame(data)
+
+    service = KpiService(repository=mock_repo)
+    peaks = service.get_peak_hours()
+
+    # It should be counted only once (at hour 10)
+    assert peaks.get(10, 0) == 1
+    assert peaks.get(11, 0) == 0
+
+
 def test_get_filters_data(mock_repo: MagicMock) -> None:
     """Verify that filter data is retrieved correctly from repository."""
     mock_repo.get_unique_countries.return_value = ["UK", "France"]

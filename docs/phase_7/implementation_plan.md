@@ -1,43 +1,50 @@
-# Phase 7: UI Layer Extraction and Performance Optimization
+# Phase 7: UI Layer Extraction, Performance Optimization & UX Refinement
 
 ## 1. Objective
-Refactor the application to extract UI logic into reusable components within the infrastructure layer and implement a multi-level caching strategy to mitigate cloud I/O latency, adhering to DDD and SOLID principles.
+
+Refactor the application to extract UI logic into reusable components within the infrastructure layer, implement a multi-level caching strategy to mitigate cloud I/O latency, and resolve critical UX/data consistency issues (Dynamic Titles, Histogram Accuracy, and Smooth Transitions).
 
 ## 2. Technical Analysis: Cloud Latency vs. Caching
-- **The Bottleneck:** Polars `scan_csv` over HTTP triggers Range Requests. Every Streamlit re-run repeats this I/O handshake, creating significant latency in "cold" environments.
+
+- **The Bottleneck:** Polars `scan_csv` over HTTP triggers Range Requests. Every Streamlit re-run repeats this I/O handshake, creating significant latency.
 - **Caching Tiers:**
-    - **`st.cache_resource`**: Used for the `DataProvider` and `Repository` instances to maintain a persistent connection/state across sessions.
-    - **`st.cache_data`**: Used for data-fetching methods in the Repository and Application layers to serialize and store the results of expensive Polars `collect()` calls.
+  - **`st.cache_resource`**: Used for `DataProvider` and `Repository` instances.
+  - **`st.cache_data`**: Used for data-fetching methods to serialize Polars `collect()` results.
 
 ## 3. Technical Requirements
-- **Infrastructure Layer (Web):** 
-    - `src/infrastructure/web/ui_components.py`: Specialized components for sidebar, metrics, and charts.
-- **Performance:** 
-    - Integration of `@st.cache_data` for repository queries.
-    - Integration of `@st.cache_resource` for adapter initialization.
-    - Implementation of `st.spinner` for user feedback during initial I/O.
-- **Architectural Alignment:** Decouple Streamlit (as a primary adapter) from the business logic orchestration.
+
+- **Infrastructure Layer (Web):**
+  - `src/infrastructure/web/ui_components.py`: Components for header, sidebar, metrics, and charts.
+- **Performance & UX:**
+  - Integration of `@st.cache_data` and `@st.cache_resource`.
+  - Implementation of **UI Skeletons/Placeholders** using `st.empty()` to prevent layout shifts.
+  - **Dynamic Dashboard Title**: Appending the selected country name to the main header.
+- **Data Integrity:**
+  - **Histogram Fix**: Ensure unique `InvoiceNo` counting in peak hours distribution.
 
 ## 4. Implementation Steps
 
-### Step 1: Documentation Update
-- Refine `docs/phase_7/implementation_plan.md` with the specific caching tiers.
+### Step 1: Logic & Data Integrity (Application Layer)
 
-### Step 2: Performance Layer (Infrastructure & Application)
-- Apply caching to `PolarsKpiRepository` methods (`get_unique_countries`, `get_date_range`).
-- Apply caching to `KpiService` orchestration methods where applicable.
-- Ensure DataProvider initialization is cached as a resource.
+- Update `KpiService.get_peak_hours` to apply `.unique("InvoiceNo")` before grouping by hour.
+- Add unit tests to verify unique invoice counting per hour.
 
-### Step 3: UI Component Extraction
+### Step 2: UI Component Extraction (Infrastructure Layer)
+
 - Create `src/infrastructure/web/ui_components.py`.
-- Refactor sidebar selection logic into `render_sidebar()`.
-- Refactor KPI metric display into `render_kpi_grid()`.
-- Refactor Plotly visualizations into `render_visualizations()`.
+- `render_header(country: str | None)`: Logic for dynamic title.
+- `render_sidebar(...)`: Sidebar filter encapsulation.
+- `render_kpi_grid(...)`: Metric cards with placeholder support.
+- `render_visualizations(...)`: Plotly charts with placeholder support.
 
-### Step 4: Refactor `main.py`
-- Utilize `st.spinner` during the initial data resolution.
-- Clean up `main.py` to use the new cached service and UI components.
+### Step 3: Performance & UX Refinement (Infrastructure & Main)
+
+- Apply caching decorators to `PolarsKpiRepository` and `KpiService`.
+- Refactor `main.py` to use `st.empty()` placeholders for each major section (Metrics, Charts).
+- Replace `st.spinner` with targeted loading states within placeholders to ensure smooth transitions.
 
 ## 5. Verification & Testing
-- **Linter Check:** Run `make lint` to ensure PEP 8 and project-specific rules are met.
-- **Latency Audit:** Measure time-to-interactivity on Streamlit Cloud for cached vs. non-cached requests.
+
+- **Linter Check:** Run `make lint` (Ruff) to ensure project standards.
+- **Manual UX Audit:** Verify dynamic title behavior and transition smoothness (no "jumping" UI).
+- **Accuracy Check:** Validate histogram bars against a known subset of data (1 invoice = 1 count).
