@@ -15,6 +15,7 @@ def test_ensure_data_is_available_success(monkeypatch: pytest.MonkeyPatch) -> No
     provider = CloudDataProvider()
     assert provider.ensure_data_is_available() == test_url
 
+
 def test_ensure_data_is_available_missing_variable() -> None:
     """Verifies that an error is raised when the environment variable is missing."""
     # Ensure variable is not set

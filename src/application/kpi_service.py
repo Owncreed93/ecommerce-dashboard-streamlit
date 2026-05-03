@@ -178,7 +178,7 @@ class KpiService:
         start_date: datetime | None = None,
         end_date: datetime | None = None,
         trans_type: TransactionType = TransactionType.ALL,
-    ) -> dict[str, int]:
+    ) -> dict:
         """Segments orders into Low, Mid, and High value categories.
 
         Args:
@@ -188,23 +188,26 @@ class KpiService:
             trans_type: Type of transactions to include.
 
         Returns:
-            A dictionary with the count of orders in each segment.
+            A dictionary with the count of orders and the thresholds used.
         """
         lf = self.repository.get_lazy_data(
             country=country, start_date=start_date, end_date=end_date
         )
         lf = self._apply_transaction_filter(lf, trans_type)
 
+        # Retrieve dynamic thresholds from repository
+        thresholds = self.repository.get_revenue_quantiles()
+
         # Group by InvoiceNo to get total per order
         order_totals = lf.group_by("InvoiceNo").agg(
             (pl.col("Quantity") * pl.col("UnitPrice")).abs().sum().alias("order_total")
         )
 
-        # Define segments
+        # Define segments using dynamic thresholds
         segmented = order_totals.with_columns(
-            pl.when(pl.col("order_total") < 50)
+            pl.when(pl.col("order_total") < float(thresholds.low_bound))
             .then(pl.lit("Low"))
-            .when(pl.col("order_total") < 200)
+            .when(pl.col("order_total") < float(thresholds.high_bound))
             .then(pl.lit("Mid"))
             .otherwise(pl.lit("High"))
             .alias("segment")
@@ -213,7 +216,15 @@ class KpiService:
         # Aggregate segments
         result = segmented.group_by("segment").len().collect()
 
-        return dict(zip(result["segment"], result["len"], strict=False))
+        counts = dict(zip(result["segment"], result["len"], strict=False))
+
+        return {
+            "counts": counts,
+            "thresholds": {
+                "low": thresholds.low_bound,
+                "high": thresholds.high_bound,
+            },
+        }
 
     def get_peak_hours(
         self,

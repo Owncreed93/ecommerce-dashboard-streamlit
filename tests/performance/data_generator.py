@@ -22,8 +22,14 @@ def generate_synthetic_data(file_path: str, row_count: int = 1_000_000) -> None:
     g = Generic(locale=Locale.EN)
 
     headers = [
-        "InvoiceNo", "StockCode", "Description", "Quantity",
-        "InvoiceDate", "UnitPrice", "CustomerID", "Country"
+        "InvoiceNo",
+        "StockCode",
+        "Description",
+        "Quantity",
+        "InvoiceDate",
+        "UnitPrice",
+        "CustomerID",
+        "Country",
     ]
 
     countries = ["United Kingdom", "France", "Germany", "USA", "Spain", "EIRE"]
@@ -43,19 +49,23 @@ def generate_synthetic_data(file_path: str, row_count: int = 1_000_000) -> None:
                 "%m/%d/%Y %H:%M"
             )
 
-            writer.writerow([
-                invoice_no,
-                g.code.ean(),
-                g.text.words(quantity=3),
-                quantity,
-                invoice_date,
-                round(random.uniform(0.5, 50.0), 2),
-                random.randint(12345, 18999),
-                random.choice(countries)
-            ])
+            writer.writerow(
+                [
+                    invoice_no,
+                    g.code.ean(),
+                    g.text.words(quantity=3),
+                    quantity,
+                    invoice_date,
+                    round(random.uniform(0.5, 50.0), 2),
+                    random.randint(12345, 18999),
+                    random.choice(countries),
+                ]
+            )
+
 
 if __name__ == "__main__":
     import sys
+
     count = int(sys.argv[1]) if len(sys.argv) > 1 else 1_000_000
     print(f"Generating {count:,} synthetic rows...")
     generate_synthetic_data("data/stress_test.csv", count)

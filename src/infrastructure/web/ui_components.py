@@ -119,14 +119,14 @@ def render_kpi_grid(
 
 
 def render_visualizations(
-    segmentation_data: dict[str, int],
+    segmentation_data: dict,
     hours_data: dict[int, int],
     trans_type: TransactionType,
 ) -> None:
     """Renders the Plotly charts for segmentation and peak hours.
 
     Args:
-        segmentation_data: Data for order value segmentation.
+        segmentation_data: Data for order value segmentation (counts and thresholds).
         hours_data: Data for peak shopping hours.
         trans_type: Selected transaction type filter.
     """
@@ -134,17 +134,28 @@ def render_visualizations(
 
     with col_left:
         st.subheader(f"Order Value Segmentation ({trans_type.value})")
-        if not segmentation_data:
+
+        counts = segmentation_data.get("counts", {})
+        thresholds = segmentation_data.get("thresholds", {})
+
+        if not counts:
             st.info("No data available for this selection.")
         else:
             fig_seg = px.pie(
-                names=list(segmentation_data.keys()),
-                values=list(segmentation_data.values()),
+                names=list(counts.keys()),
+                values=list(counts.values()),
                 title=f"Distribution of {trans_type.value}",
                 hole=0.4,
                 color_discrete_sequence=px.colors.qualitative.Pastel,
             )
             st.plotly_chart(fig_seg, width="stretch")
+
+            # Display dynamic thresholds used
+            low = thresholds.get("low", 0)
+            high = thresholds.get("high", 0)
+            st.caption(
+                f"Statistical Benchmarks: Low < ${low:,.2f} | High > ${high:,.2f}"
+            )
 
     with col_right:
         st.subheader(f"Peak Shopping Hours ({trans_type.value})")

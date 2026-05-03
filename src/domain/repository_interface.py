@@ -9,6 +9,8 @@ from datetime import datetime
 
 import polars as pl
 
+from domain.segmentation_thresholds import SegmentationThresholds
+
 
 class KpiRepository(ABC):
     """Abstract interface for KPI data access."""
@@ -31,4 +33,9 @@ class KpiRepository(ABC):
     @abstractmethod
     def get_date_range(self) -> tuple[datetime, datetime]:
         """Retrieves the minimum and maximum dates in the dataset."""
+        pass
+
+    @abstractmethod
+    def get_revenue_quantiles(self) -> SegmentationThresholds:
+        """Calculates dynamic quantiles (P25 and P75) for order totals."""
         pass

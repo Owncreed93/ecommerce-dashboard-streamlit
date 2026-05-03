@@ -26,7 +26,5 @@ class CloudDataProvider(DataProvider):
         """
         url = os.environ.get(OCI_PAR_URL_KEY)
         if not url:
-            raise OSError(
-                f"Environment variable '{OCI_PAR_URL_KEY}' is not set."
-            )
+            raise OSError(f"Environment variable '{OCI_PAR_URL_KEY}' is not set.")
         return url

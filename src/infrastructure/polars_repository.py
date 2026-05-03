@@ -5,11 +5,13 @@ Lazy API to process large datasets with minimal memory footprint.
 """
 
 from datetime import datetime
+from decimal import Decimal
 
 import polars as pl
 
 from domain.data_provider_interface import DataProvider
 from domain.repository_interface import KpiRepository
+from domain.segmentation_thresholds import SegmentationThresholds
 
 
 class PolarsKpiRepository(KpiRepository):
@@ -85,13 +87,7 @@ class PolarsKpiRepository(KpiRepository):
 
     def get_unique_countries(self) -> list[str]:
         """Retrieves a sorted list of unique countries in the dataset."""
-        df = (
-            self._get_lazy_frame()
-            .select("Country")
-            .unique()
-            .sort("Country")
-            .collect()
-        )
+        df = self._get_lazy_frame().select("Country").unique().sort("Country").collect()
         return df["Country"].to_list()
 
     def get_date_range(self) -> tuple[datetime, datetime]:
@@ -107,3 +103,36 @@ class PolarsKpiRepository(KpiRepository):
         ).collect()
 
         return stats["min_date"][0], stats["max_date"][0]
+
+    def get_revenue_quantiles(self) -> SegmentationThresholds:
+        """Calculates dynamic quantiles (P25 and P75) for order totals.
+
+        Returns:
+            A SegmentationThresholds object with P25 and P75 values.
+        """
+        lf = self._get_lazy_frame()
+
+        # Group by InvoiceNo to get total per order
+        order_totals = (
+            lf.group_by("InvoiceNo")
+            .agg(
+                (pl.col("Quantity") * pl.col("UnitPrice"))
+                .abs()
+                .sum()
+                .alias("order_total")
+            )
+            .select("order_total")
+        )
+
+        # Calculate quantiles
+        stats = order_totals.select(
+            [
+                pl.col("order_total").quantile(0.25).alias("p25"),
+                pl.col("order_total").quantile(0.75).alias("p75"),
+            ]
+        ).collect()
+
+        p25 = Decimal(str(round(stats["p25"][0], 2)))
+        p75 = Decimal(str(round(stats["p75"][0], 2)))
+
+        return SegmentationThresholds(low_bound=p25, high_bound=p75)

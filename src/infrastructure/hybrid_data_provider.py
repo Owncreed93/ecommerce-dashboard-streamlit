@@ -55,7 +55,6 @@ class HybridDataProvider(DataProvider):
             return str(url)
 
         logger.warning(
-            "OCI_PAR_URL not found. Falling back to local path: %s",
-            self.local_path
+            "OCI_PAR_URL not found. Falling back to local path: %s", self.local_path
         )
         return self.local_path

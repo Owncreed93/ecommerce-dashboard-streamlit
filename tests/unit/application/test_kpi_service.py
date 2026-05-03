@@ -14,6 +14,7 @@ import pytest
 from application.kpi_service import KpiService
 from domain.money import Money
 from domain.repository_interface import KpiRepository
+from domain.segmentation_thresholds import SegmentationThresholds
 
 
 @pytest.fixture
@@ -31,6 +32,12 @@ def mock_repo() -> MagicMock:
     }
     # (2*10) + (3*10) + (10*5) = 20 + 30 + 50 = 100
     repo.get_lazy_data.return_value = pl.LazyFrame(data)
+
+    # Default thresholds for testing
+    repo.get_revenue_quantiles.return_value = SegmentationThresholds(
+        low_bound=Decimal("40.0"), high_bound=Decimal("150.0")
+    )
+
     return repo
 
 
@@ -64,14 +71,16 @@ def test_get_active_customers(mock_repo: MagicMock) -> None:
 
 
 def test_get_order_segmentation(mock_repo: MagicMock) -> None:
-    """Verify that orders are correctly segmented by value."""
-    # Data has orders of 50 and 50.
-    # Service Thresholds: Low < 50, Mid < 200, otherwise High.
-    # Both orders (50) will be "Mid".
+    """Verify that orders are correctly segmented using dynamic thresholds."""
+    # Order 1: (2*10) + (3*10) = 50. Low=40, High=150. 50 is "Mid".
+    # Order 2: 10*5 = 50. 50 is "Mid".
+    # Expected: 2 Mid.
     service = KpiService(repository=mock_repo)
     segmentation = service.get_order_segmentation()
 
-    assert segmentation["Mid"] == 2
+    assert segmentation["counts"]["Mid"] == 2
+    assert segmentation["thresholds"]["low"] == Decimal("40.0")
+    assert segmentation["thresholds"]["high"] == Decimal("150.0")
 
 
 def test_get_peak_hours(mock_repo: MagicMock) -> None:
